@@ -1,8 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:quizzler/question.dart';
+import 'package:quizzler/quiz_brain.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
-void main() => runApp(QizzlerApp());
+
+QuizBrain quizBrain = QuizBrain();
+
+void main() => runApp(const QizzlerApp());
 
 class QizzlerApp extends StatelessWidget {
   const QizzlerApp({super.key});
@@ -45,23 +51,50 @@ class _QuizPageState extends State<QuizPage>{
 
   List <Widget> scoreKeeper = [];
 
-  List<String> questions = [
-    'You can lead a cow downstairs but not upstairs.',
-    'Approximately one quarter of human bones are in the feet.',
-    'A slug\'s blood is green.'
-  ];
+  void checkAnswer(bool userPickedAnswer){
 
-  List<bool> answers = [
-    false,
-    true,
-    true
-  ];
+    bool correctAnswer = quizBrain.getCorrectAnswer();
 
-  int questionNumber = 0;
+
+    setState(() {
+      if(quizBrain.isFinished()){
+        Alert(
+          type: AlertType.info,
+          context: context,
+          title: 'Quiz End',
+          desc: 'Quiz has ended',
+          buttons: [
+            DialogButton(
+              child: Text(
+                "OK",
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+              onPressed: () => Navigator.pop(context),
+              width: 120,
+            )
+          ],
+        ).show();
+        quizBrain.reset();
+        scoreKeeper = [];
+      }else{
+        if(userPickedAnswer == correctAnswer){
+          scoreKeeper.add(Icon(Icons.check, color: Colors.green,));
+        }else{
+          scoreKeeper.add(Icon(Icons.close, color: Colors.red,));
+        }
+        quizBrain.nextQuestion();
+      }
+    });
+  }
+
+  List<Question> questionBank = [
+  Question('You can lead a cow downstairs but not upstairs.', false),
+  Question('Approximately one quarter of human bones are in the feet.', true),
+    Question('A slug\'s blood is green.', true),
+  ];
 
   @override
   Widget build(BuildContext context){
-    print(questionNumber);
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,7 +105,7 @@ class _QuizPageState extends State<QuizPage>{
             padding: const EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                questions[questionNumber],
+                quizBrain.getQuestionText(),
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 30.0,
@@ -91,19 +124,7 @@ class _QuizPageState extends State<QuizPage>{
                     minimumSize: const Size.fromHeight(50),
                   ),
                   onPressed: (){
-                    bool correctAnswer = answers[questionNumber];
-                    if(correctAnswer == true){
-                      scoreKeeper.add(
-                        Icon(Icons.check,color: Colors.green,),
-                      );
-                    }else{
-                      scoreKeeper.add(
-                        Icon(Icons.cancel,color: Colors.red,),
-                      );
-                    }
-                    setState(() {
-                      questionNumber++;
-                    });
+                    checkAnswer(true);
                   },
                   child: Text(
                     'True',
@@ -126,19 +147,7 @@ class _QuizPageState extends State<QuizPage>{
                   minimumSize: const Size.fromHeight(50),
                 ),
                 onPressed: (){
-                  bool correctAnswer = answers[questionNumber];
-                  if(correctAnswer == false){
-                    scoreKeeper.add(
-                      Icon(Icons.check,color: Colors.green,),
-                    );
-                  }else{
-                    scoreKeeper.add(
-                      Icon(Icons.cancel,color: Colors.red,),
-                    );
-                  }
-                  setState(() {
-                    questionNumber++;
-                  });
+                  checkAnswer(false);
                 },
                 child: const Text(
                   'False',
